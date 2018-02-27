@@ -2,17 +2,17 @@
 ## Docs: https://hexo.io/docs/configuration.html
 ## Source: https://github.com/hexojs/hexo/
 
-# Site
-title: Hexo
-subtitle:
+# Site 主页
+title: Senzz
+subtitle: 
 description:
-author: John Doe
+author: Senzz
 language:
 timezone:
 
 # URL
 ## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'
-url: http://yoursite.com
+url: https://senzz.github.io/
 root: /
 permalink: :year/:month/:day/:title/
 permalink_defaults:
@@ -72,9 +72,11 @@ pagination_dir: page
 # Extensions
 ## Plugins: https://hexo.io/plugins/
 ## Themes: https://hexo.io/themes/
-theme: landscape
+theme: clean-blog ## http://blackrockdigital.github.io/startbootstrap-clean-blog/index.html
 
 # Deployment
 ## Docs: https://hexo.io/docs/deployment.html
 deploy:
-  type:
+  type : git 
+  repo : git@github.com:Senzz/senzz.github.io.git
+  branch: master
