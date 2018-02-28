@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head tag -->
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!--Description-->
+    
+        <meta name="description" content="由于最近2个面试都提到了express，需要了解中间件怎么运作，内部原理是什么，所以特意去看了express源码，最后出来了这篇文章。 
+
+我们平时项目引入express的源文件index.js，
+1module.exports = require(&amp;apos;./lib/express&amp;apos;">
+    
+
+    <!--Author-->
+    
+        <meta name="author" content="Senzz">
+    
+
+    <!--Open Graph Title-->
+    
+        <meta property="og:title" content="express源码阅读"/>
+    
+
+    <!--Open Graph Description-->
+    
+
+    <!--Open Graph Site Name-->
+    <meta property="og:site_name" content="Senzz"/>
+
+    <!--Type page-->
+    
+        <meta property="og:type" content="article" />
+    
+
+    <!--Page Cover-->
+    
+
+        <meta name="twitter:card" content="summary" />
+    
+
+    <!-- Title -->
+    
+    <title>express源码阅读 - Senzz</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="https://cdn.bootcss.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/style.css">
+
+    <!-- Custom Fonts -->
+    <link href="https://cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
+    <link href="//fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css">
+    <link href="//fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="//oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="//oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- Gallery -->
+    <link href="https://cdn.bootcss.com/featherlight/1.3.5/featherlight.min.css" rel="stylesheet">
+
+    <!-- Google Analytics -->
+    
+
+
+    <!-- favicon -->
+    
+	
+</head>
+
+
+<body>
+
+    <!-- Menu -->
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Senzz</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav navbar-right">
+                
+                    <li>
+                        <a href="/">
+                            
+                                Home
+                             
+                        </a>
+                    </li>
+                
+                    <li>
+                        <a href="/archives">
+                            
+                                Archives
+                             
+                        </a>
+                    </li>
+                
+                    <li>
+                        <a href="/about">
+                            
+                                About
+                             
+                        </a>
+                    </li>
+                
+            </ul>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+
+    <!-- Main Content -->
+    <!-- Page Header -->
+<!-- Set your background image for this header in your post front-matter: cover -->
+
+<header class="intro-header" style="background-color:#2e353d;position:relative;">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <h1>express源码阅读</h1>
+                    
+                    <span class="meta">
+                        <!-- Date and Author -->
+                        
+                        
+                            2018-02-05
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div style='position:absolute;bottom: 20px;right:0;'> 
+        <img src='/img/background-icon.png' />
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+            <!-- Tags and categories -->
+           
+                <div class="col-lg-4 col-lg-offset-2 col-md-5 col-md-offset-1 post-tags">
+                    
+                        
+
+
+<a href="/tags/express/">#express</a>
+
+
+                    
+                </div>
+                <div class="col-lg-4 col-md-5 post-categories">
+                    
+                </div>
+            
+
+            <!-- Gallery -->
+            
+
+            <!-- Post Main Content -->
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <p>由于最近2个面试都提到了express，需要了解中间件怎么运作，内部原理是什么，所以特意去看了<a href="https://github.com/expressjs/express" target="_blank" rel="noopener">express源码</a>，最后出来了这篇文章。 </p>
+<hr>
+<p>我们平时项目引入express的源文件index.js，</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">module.exports = require(&apos;./lib/express&apos;);</span><br></pre></td></tr></table></figure>
+<p>知道<code>lib/express.js</code>为主文件<br>我们先回顾下怎么用express启用服务器的</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">var server = http.createServer(app);</span><br><span class="line">server.listen(port);</span><br></pre></td></tr></table></figure>
+<p>了解的人应该知道这个http方法，<code>http.createServer([requestListener])</code>,<br><code>requestListener</code> 是一个函数，会被自动添加到 <a href="http://nodejs.cn/api/http.html#http_event_request" target="_blank" rel="noopener"><code>&#39;request&#39;</code></a> 事件</p>
+<p>了解这些后，再来看看<code>index.js</code>的代码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">// index.js</span><br><span class="line">var bodyParser = require(&apos;body-parser&apos;)   // 解析body参数的</span><br><span class="line">var EventEmitter = require(&apos;events&apos;).EventEmitter;  // 事件监听对象</span><br><span class="line">var mixin = require(&apos;merge-descriptors&apos;);   // 合并对象</span><br><span class="line">var proto = require(&apos;./application&apos;);     // app的大部分方法</span><br><span class="line">var Route = require(&apos;./router/route&apos;);</span><br><span class="line">var Router = require(&apos;./router&apos;); </span><br><span class="line">var req = require(&apos;./request&apos;);</span><br><span class="line">var res = require(&apos;./response&apos;);</span><br><span class="line"></span><br><span class="line">exports = module.exports = createApplication;</span><br><span class="line"></span><br><span class="line">function createApplication() &#123;</span><br><span class="line">  // 这个app就是返回的 requestListener 函数, 用于http.createServer([requestListener])</span><br><span class="line">  var app = function(req, res, next) &#123;</span><br><span class="line">    app.handle(req, res, next);</span><br><span class="line">  &#125;;</span><br><span class="line"> </span><br><span class="line">  mixin(app, EventEmitter.prototype, false);  // 把EventEmitter的原型方法合并到app</span><br><span class="line">  mixin(app, proto, false);                   // 把proto的方法方法合并到app</span><br><span class="line"></span><br><span class="line">  // expose the prototype that will get set on requests</span><br><span class="line">  app.request = Object.create(req, &#123;  // 在指定原型对象上添加新属性后的对象。</span><br><span class="line">    app: &#123; configurable: true, enumerable: true, writable: true, value: app &#125;</span><br><span class="line">  &#125;)</span><br><span class="line"></span><br><span class="line">  // expose the prototype that will get set on responses</span><br><span class="line">  app.response = Object.create(res, &#123;</span><br><span class="line">    app: &#123; configurable: true, enumerable: true, writable: true, value: app &#125;</span><br><span class="line">  &#125;)</span><br><span class="line"></span><br><span class="line">  app.init(); // 初始化，在proto(application.js)里面</span><br><span class="line">  return app;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>主要把一些方法都集成在app当中，再看看看<code>app.init()</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line">// application.js</span><br><span class="line">var app = exports = module.exports = &#123;&#125;;</span><br><span class="line"></span><br><span class="line">var trustProxyDefaultSymbol = &apos;@@symbol:trust_proxy_default&apos;;</span><br><span class="line"></span><br><span class="line">app.init = function init() &#123;</span><br><span class="line">  this.cache = &#123;&#125;;</span><br><span class="line">  this.engines = &#123;&#125;;</span><br><span class="line">  this.settings = &#123;&#125;;</span><br><span class="line"></span><br><span class="line">  this.defaultConfiguration();</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">app.defaultConfiguration = function defaultConfiguration() &#123;</span><br><span class="line">  var env = process.env.NODE_ENV || &apos;development&apos;;</span><br><span class="line"></span><br><span class="line">  // default settings</span><br><span class="line">  this.enable(&apos;x-powered-by&apos;);</span><br><span class="line">  this.set(&apos;etag&apos;, &apos;weak&apos;);</span><br><span class="line">  this.set(&apos;env&apos;, env);</span><br><span class="line">  this.set(&apos;query parser&apos;, &apos;extended&apos;);</span><br><span class="line">  this.set(&apos;subdomain offset&apos;, 2);</span><br><span class="line">  this.set(&apos;trust proxy&apos;, false);</span><br><span class="line"></span><br><span class="line">  // trust proxy inherit back-compat</span><br><span class="line">  Object.defineProperty(this.settings, trustProxyDefaultSymbol, &#123;</span><br><span class="line">    configurable: true,</span><br><span class="line">    value: true</span><br><span class="line">  &#125;);</span><br><span class="line"></span><br><span class="line">  debug(&apos;booting in %s mode&apos;, env);</span><br><span class="line"> </span><br><span class="line">  this.on(&apos;mount&apos;, function onmount(parent) &#123;</span><br><span class="line">    // inherit trust proxy</span><br><span class="line">    if (this.settings[trustProxyDefaultSymbol] === true</span><br><span class="line">      &amp;&amp; typeof parent.settings[&apos;trust proxy fn&apos;] === &apos;function&apos;) &#123;</span><br><span class="line">      delete this.settings[&apos;trust proxy&apos;];</span><br><span class="line">      delete this.settings[&apos;trust proxy fn&apos;];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    // inherit protos</span><br><span class="line">    setPrototypeOf(this.request, parent.request)</span><br><span class="line">    setPrototypeOf(this.response, parent.response)</span><br><span class="line">    setPrototypeOf(this.engines, parent.engines)</span><br><span class="line">    setPrototypeOf(this.settings, parent.settings)</span><br><span class="line">  &#125;);</span><br><span class="line"></span><br><span class="line">  // setup locals</span><br><span class="line">  this.locals = Object.create(null);</span><br><span class="line"></span><br><span class="line">  // top-most app is mounted at /</span><br><span class="line">  this.mountpath = &apos;/&apos;;</span><br><span class="line"></span><br><span class="line">  // default locals</span><br><span class="line">  this.locals.settings = this.settings;</span><br><span class="line"></span><br><span class="line">  // default configuration</span><br><span class="line">  this.set(&apos;view&apos;, View);</span><br><span class="line">  this.set(&apos;views&apos;, resolve(&apos;views&apos;));</span><br><span class="line">  this.set(&apos;jsonp callback name&apos;, &apos;callback&apos;);</span><br><span class="line"></span><br><span class="line">  if (env === &apos;production&apos;) &#123;</span><br><span class="line">    this.enable(&apos;view cache&apos;);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>这部分主要设置了一些初始化的东西</p>
+<p>在使用当中，我们主要使用的<code>app.use</code>中间件、<code>app.get</code>和<code>app.post</code>等路由方法。<br>现在我们来看看这两个问题<strong>express怎么生成路由</strong>，<strong>中间件是怎么运作的</strong></p>
+<h4 id="1-express怎么生成路由"><a href="#1-express怎么生成路由" class="headerlink" title="1. express怎么生成路由"></a>1. express怎么生成路由</h4><p>查到了一些app没有get，post之类的方法，但从<code>application.js</code>可以找到这段代码<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">// application.js</span><br><span class="line">methods.forEach(function(method)&#123;</span><br><span class="line">  app[method] = function(path)&#123;</span><br><span class="line">    if (method === &apos;get&apos; &amp;&amp; arguments.length === 1) &#123;</span><br><span class="line">      // app.get(setting)</span><br><span class="line">      return this.set(path);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    this.lazyrouter();</span><br><span class="line"></span><br><span class="line">    var route = this._router.route(path);</span><br><span class="line">    route[method].apply(route, slice.call(arguments, 1));  </span><br><span class="line">    return this;</span><br><span class="line">  &#125;;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure></p>
+<p>methos是一个引入的库<code>var methods = require(&#39;methods&#39;);</code>，查看github上的methods源码知道它就是一个请求方法的数组<code>[&#39;get, &#39;post&#39;, ...]</code>, 所以这段代码就是注册了这些<code>app.get</code>, <code>app.post</code>等方法</p>
+<p><code>route[method].apply(route, slice.call(arguments, 1));</code><br>可以知道我们注册的路由<code>function</code>就是<code>Array.prototype.slice.call(arguments, 1)</code>;</p>
+<p>我们主要看看<code>route</code>到底是什么<br>从<code>this.lazyrouter();</code> 可以找到<code>this._router</code>的值，就是一个Router实例。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">app.lazyrouter = function lazyrouter() &#123;</span><br><span class="line">  if (!this._router) &#123;</span><br><span class="line">    this._router = new Router(&#123;</span><br><span class="line">      caseSensitive: this.enabled(&apos;case sensitive routing&apos;),</span><br><span class="line">      strict: this.enabled(&apos;strict routing&apos;)</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">    this._router.use(query(this.get(&apos;query parser fn&apos;)));</span><br><span class="line">    this._router.use(middleware.init(this));</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<p>Router是导入的<code>lib/router/index.js</code><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">var proto = module.exports = function(options) &#123;</span><br><span class="line">  var opts = options || &#123;&#125;;</span><br><span class="line"></span><br><span class="line">  function router(req, res, next) &#123;</span><br><span class="line">    router.handle(req, res, next);</span><br><span class="line">  &#125;</span><br><span class="line"> </span><br><span class="line">  // mixin Router class functions</span><br><span class="line">  setPrototypeOf(router, proto);   // 把proto作为router的原型</span><br><span class="line"></span><br><span class="line">  router.params = &#123;&#125;;</span><br><span class="line">  router._params = [];</span><br><span class="line">  router.caseSensitive = opts.caseSensitive;</span><br><span class="line">  router.mergeParams = opts.mergeParams;</span><br><span class="line">  router.strict = opts.strict;</span><br><span class="line">  router.stack = [];</span><br><span class="line"></span><br><span class="line">  return router;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<p><code>setPrototypeOf(router, proto);</code>   这句话把proto作为router的原型<br>我们来看看proto有没有route这个方法,答案是有的</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">proto.route = function route(path) &#123;</span><br><span class="line">  var route = new Route(path);</span><br><span class="line">  </span><br><span class="line"> // 一个layer层实例，存着route，方便以后回调方法</span><br><span class="line">  var layer = new Layer(path, &#123;</span><br><span class="line">    sensitive: this.caseSensitive,</span><br><span class="line">    strict: this.strict,</span><br><span class="line">    end: true</span><br><span class="line">  &#125;, route.dispatch.bind(route));</span><br><span class="line"></span><br><span class="line">  layer.route = route;</span><br><span class="line"> </span><br><span class="line">  this.stack.push(layer);   // router的stack数组里添加layer， 以后匹配路由遍历使用</span><br><span class="line">  return route;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>创建了Route实例和Layer实例；<br>把route作为属性引入在layer实例中，并在stack加入layer实例（这里主要是当路由触发，遍历的时候用到，以后再讲）<br>所以之前的route也就是一个Route实例。<br>我们再看看<code>/lib/router/route.js</code><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">// /lib/router/route.js</span><br><span class="line">module.exports = Route;</span><br><span class="line"></span><br><span class="line">function Route(path) &#123;</span><br><span class="line">  this.path = path;</span><br><span class="line">  this.stack = [];</span><br><span class="line"></span><br><span class="line">  debug(&apos;new %o&apos;, path)</span><br><span class="line"></span><br><span class="line">  // route handlers for various http methods</span><br><span class="line">  this.methods = &#123;&#125;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">methods.forEach(function(method)&#123;</span><br><span class="line">  Route.prototype[method] = function()&#123;</span><br><span class="line">    var handles = flatten(slice.call(arguments));</span><br><span class="line"></span><br><span class="line">    for (var i = 0; i &lt; handles.length; i++) &#123;</span><br><span class="line">      var handle = handles[i];</span><br><span class="line"></span><br><span class="line">      if (typeof handle !== &apos;function&apos;) &#123;</span><br><span class="line">        var type = toString.call(handle);</span><br><span class="line">        var msg = &apos;Route.&apos; + method + &apos;() requires a callback function but got a &apos; + type</span><br><span class="line">        throw new Error(msg);</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      debug(&apos;%s %o&apos;, method, this.path)</span><br><span class="line"></span><br><span class="line">      var layer = Layer(&apos;/&apos;, &#123;&#125;, handle);</span><br><span class="line">      layer.method = method;</span><br><span class="line"></span><br><span class="line">      this.methods[method] = true;</span><br><span class="line">      this.stack.push(layer);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    return this;</span><br><span class="line">  &#125;;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure></p>
+<p>route实例也会存在一个stack, 主要用于一个路由可能有多个回调函数。<br>如<code>app.post(&#39;/&#39;, authFn, cb)</code><br>所以之前的这段代码<code>route[method].apply(route, slice.call(arguments, 1));</code><br>其实就是执行这个原型方法。<br><code>handles</code>就是我们路由的回调函数。<br>每个Route都会创建一个Layer实例，并在layer层存储在route的stack里面。<br>我们再看看Layer构造函数<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">function Layer(path, options, fn) &#123;</span><br><span class="line">  if (!(this instanceof Layer)) &#123;</span><br><span class="line">    return new Layer(path, options, fn);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  debug(&apos;new %o&apos;, path)</span><br><span class="line">  var opts = options || &#123;&#125;;</span><br><span class="line"></span><br><span class="line">  this.handle = fn;</span><br><span class="line">  this.name = fn.name || &apos;&lt;anonymous&gt;&apos;;</span><br><span class="line">  this.params = undefined;</span><br><span class="line">  this.path = undefined;</span><br><span class="line">  this.regexp = pathRegexp(path, this.keys = [], opts);</span><br><span class="line"></span><br><span class="line">  // set fast path flags</span><br><span class="line">  this.regexp.fast_star = path === &apos;*&apos;</span><br><span class="line">  this.regexp.fast_slash = path === &apos;/&apos; &amp;&amp; opts.end === false</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>所以可以知道，layer实例存储着我们的handle方法，也就是我们路由的回调函数。</p>
+<p>现在我们总结下express的大体结构，大概是这样的：</p>
+<p><img src="/img/express/express_1.png" alt="express大体结构"></p>
+<p>今天就到这里吧。下次再写写中间件<code>app.use</code></p>
+
+
+                
+            </div>
+
+            <!-- Comments -->
+            
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    
+
+
+                </div>
+            
+        </div>
+    </div>
+</article>
+
+    <!-- Footer -->
+    <hr />
+
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    
+
+                    
+
+                    
+                        <li>
+                            <a href="https://github.com/senzz" target="_blank">
+                                <span class="fa-stack fa-lg">
+                                    <i class="fa fa-circle fa-stack-2x"></i>
+                                    <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                                </span>
+                            </a>
+                        </li>
+                    
+
+                    
+
+                    
+
+                    
+                </ul>
+                <p class="copyright text-muted">Copyright &copy; 2018 Senzz<br></p>
+                <!-- <p class="copyright text-muted">Original Theme <a target="_blank" href="http://startbootstrap.com/template-overviews/clean-blog/">Clean Blog</a> from <a href="http://startbootstrap.com/" target="_blank">Start Bootstrap</a></p>
+                <p class="copyright text-muted">Adapted for <a target="_blank" href="https://hexo.io/">Hexo</a> by <a href="http://www.codeblocq.com/" target="_blank">Jonathan Klughertz</a></p> -->
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+    <!-- After footer scripts -->
+    
+<!-- jQuery -->
+<script src="https://cdn.bootcss.com/jquery/2.1.4/jquery.min.js"></script>
+
+<!-- Bootstrap -->
+<script src="https://cdn.bootcss.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+
+<!-- Gallery -->
+<script src="https://cdn.bootcss.com/featherlight/1.3.5/featherlight.min.js" type="text/javascript" charset="utf-8"></script>
+
+<!-- Disqus Comments -->
+
+
+
+</body>
+
+</html>
