@@ -319,7 +319,8 @@ app.lazyrouter = function lazyrouter() {
 };
 </code></pre><p>其实跟app.use实现差不多，主要里面创建了<code>layer实例</code>, layer的handle就是我们的回调函数,并把layer层存储在router的stack数组中</p>
 <p>所以大概是 app._router里面有个stack数组，stack里面存储Layer实例层，layer的hanlde属性也储存着我们的回调方法</p>
-<p>下篇再进一步讲下express的next的实现，这是中间件的关键。<br>理解通了前两篇文章，下一篇才能更好的理解</p>
+<p>因此我们使用<code>app.use</code>的时候，就是一直往根部router里面的stack添加layer层。这差不多就是中间件的方式。</p>
+<p>下篇再进一步讲下express的next的实现，这是中间件的运行的关键。<br>理解通了前两篇文章，下一篇才能更好的理解</p>
 
 
                 

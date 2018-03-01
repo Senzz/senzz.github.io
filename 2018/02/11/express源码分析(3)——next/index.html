@@ -10,6 +10,16 @@
 
     <!--Description-->
     
+        <meta name="description" content="我们平时启动express主要有两种方式：
+
+第一个分析中所说的：
+var app = require(&amp;#39;express&amp;#39;)();
+var server = http.createServer(app);
+var port = 3000;
+server.listen(port);
+
+">
+    
 
     <!--百度seo-->
     
@@ -187,7 +197,271 @@
 
             <!-- Post Main Content -->
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-                
+                <p>我们平时启动express主要有两种方式：</p>
+<ol>
+<li><p>第一个分析中所说的：</p>
+<pre><code>var app = require(&#39;express&#39;)();
+var server = http.createServer(app);
+var port = 3000;
+server.listen(port);
+</code></pre></li>
+<li><p>使用express的api</p>
+<pre><code>var port = 3000;
+var server = app.listen(port, function () {
+var host = server.address().address;
+var port = server.address().port;
+
+console.log(&#39;Example app listening at http://%s:%s&#39;, host, port);
+});
+</code></pre></li>
+</ol>
+<p>这两种方式其实差不多，看下<code>app.listen</code>源码</p>
+<pre><code>app.listen = function listen() {
+  var server = http.createServer(this);
+  return server.listen.apply(server, arguments);
+};
+</code></pre><p>里面的this就是app，是不是跟第一种方法一样。</p>
+<p>现在开始将中间件怎么运行，主要也就是next。<br>当我们通过浏览器浏览该路由，或者通过postman、ajax等方式请求METHOD接口的时候。<br>就触发app的方法。<br>也就是我们刚刚所说的，nodejs的<code>http.createServer([requestListener])</code>其实差不多就是监听请求事件。<br><code>requestListener</code> 是一个函数，会被自动添加到 <a href="http://nodejs.cn/api/http.html#http_event_request" target="_blank" rel="noopener"><code>&#39;request&#39;</code></a> 事件</p>
+<p>当我们监听到请求，就是触发app这个方法</p>
+<pre><code>// express.js
+var app = function(req, res, next) {
+  app.handle(req, res, next);
+};
+</code></pre><p>这里的<code>next</code>是没有东西的，是<code>undefined</code></p>
+<pre><code>// application.js
+app.handle = function handle(req, res, callback) {
+  var router = this._router;
+
+  // final handler
+  // finalhandler作为最后一步调用，收集信息
+  var done = callback || finalhandler(req, res, {
+    env: this.get(&#39;env&#39;),
+    onerror: logerror.bind(this)
+  });
+
+  // no routes
+  if (!router) {
+    debug(&#39;no routes defined on app&#39;);
+    done();
+    return;
+  }
+
+  router.handle(req, res, done);
+};
+</code></pre><p>再看<code>router.handle</code></p>
+<pre><code>// router/index.js
+proto.handle = function handle(req, res, out) {
+  var self = this;
+
+  debug(&#39;dispatching %s %s&#39;, req.method, req.url);
+
+  var idx = 0;
+  var protohost = getProtohost(req.url) || &#39;&#39;
+  var removed = &#39;&#39;;
+  var slashAdded = false; 
+  var paramcalled = {};
+
+  // store options for OPTIONS request
+  // only used if OPTIONS request
+  var options = [];
+
+  // middleware and routes
+  var stack = self.stack;
+
+  // manage inter-router variables
+  var parentParams = req.params;
+  var parentUrl = req.baseUrl || &#39;&#39;;
+  var done = restore(out, req, &#39;baseUrl&#39;, &#39;next&#39;, &#39;params&#39;);
+
+  // setup next layer
+  req.next = next;
+
+  // for options requests, respond with a default if nothing else responds
+  if (req.method === &#39;OPTIONS&#39;) {
+    done = wrap(done, function(old, err) {
+      if (err || options.length === 0) return old(err);
+      sendOptionsResponse(res, options, old);
+    });
+  }
+
+  // setup basic req values
+  req.baseUrl = parentUrl;
+  req.originalUrl = req.originalUrl || req.url;
+
+  // console.log({
+  //   idx, protohost, removed, slashAdded, paramcalled,
+  //   options, stack, parentParams, parentUrl, done
+  // });
+
+  next();
+
+  function next(err) {
+    var layerError = err === &#39;route&#39;
+      ? null
+      : err;
+
+    // remove added slash
+    if (slashAdded) {
+      req.url = req.url.substr(1);
+      slashAdded = false;
+    }
+
+    // restore altered req.url
+    if (removed.length !== 0) {
+      req.baseUrl = parentUrl;
+      req.url = protohost + removed + req.url.substr(protohost.length);
+      removed = &#39;&#39;;
+    }
+
+    // signal to exit router
+    if (layerError === &#39;router&#39;) {
+      setImmediate(done, null)
+      return;
+    }
+
+    // no more matching layers
+    if (idx &gt;= stack.length) {
+      setImmediate(done, layerError);
+      return;
+    }
+
+    // get pathname of request
+    var path = getPathname(req);
+
+    if (path == null) {
+      return done(layerError);
+    }
+
+    // find next matching layer
+    var layer; 
+    var match;
+    var route;
+
+    while (match !== true &amp;&amp; idx &lt; stack.length) {
+
+      layer = stack[idx++];
+      match = matchLayer(layer, path);
+      route = layer.route;
+      console.log({idx, stackLength: stack.length, match, layer, layerHandle: layer.handle.toString()})
+      if (typeof match !== &#39;boolean&#39;) {
+        // hold on to layerError
+        layerError = layerError || match;
+      }
+
+      if (match !== true) {
+        continue;
+      }
+
+      if (!route) {
+        // process non-route handlers normally
+        continue;
+      }
+
+      if (layerError) {
+        // routes do not match with a pending error
+        match = false;
+        continue;
+      }
+
+      var method = req.method;
+      var has_method = route._handles_method(method);
+
+      // build up automatic options response
+      if (!has_method &amp;&amp; method === &#39;OPTIONS&#39;) {
+        appendMethods(options, route._options());
+      }
+
+      // don&#39;t even bother matching route
+      if (!has_method &amp;&amp; method !== &#39;HEAD&#39;) {
+        match = false;
+        continue;
+      }
+    }
+    console.log(&#39;while doned&#39;, match, idx)
+    // no match
+    if (match !== true) {
+      return done(layerError);
+    }
+
+    // store route for dispatch on change
+    if (route) {
+      req.route = route;
+    }
+
+    // Capture one-time layer values
+    req.params = self.mergeParams
+      ? mergeParams(layer.params, parentParams)
+      : layer.params;
+    var layerPath = layer.path;
+
+    // this should be done for the layer
+    self.process_params(layer, paramcalled, req, res, function (err) {
+      if (err) {
+        return next(layerError || err);
+      }
+
+      if (route) {
+        return layer.handle_request(req, res, next);
+      }
+
+      trim_prefix(layer, layerError, layerPath, path);
+    });
+  }
+
+  function trim_prefix(layer, layerError, layerPath, path) {
+    console.log({layer, layerError, layerPath, path})
+
+    if (layerPath.length !== 0) {
+      // Validate path breaks on a path separator
+      var c = path[layerPath.length]
+      if (c &amp;&amp; c !== &#39;/&#39; &amp;&amp; c !== &#39;.&#39;) return next(layerError)
+
+      // Trim off the part of the url that matches the route
+      // middleware (.use stuff) needs to have the path stripped
+      debug(&#39;trim prefix (%s) from url %s&#39;, layerPath, req.url);
+      removed = layerPath;
+      req.url = protohost + req.url.substr(protohost.length + removed.length);
+
+      // Ensure leading slash
+      if (!protohost &amp;&amp; req.url[0] !== &#39;/&#39;) {
+        req.url = &#39;/&#39; + req.url;
+        slashAdded = true;
+      }
+
+      // Setup base URL (no trailing slash)
+      req.baseUrl = parentUrl + (removed[removed.length - 1] === &#39;/&#39;
+        ? removed.substring(0, removed.length - 1)
+        : removed);
+    }
+
+    debug(&#39;%s %s : %s&#39;, layer.name, layerPath, req.originalUrl);
+
+    if (layerError) {
+      layer.handle_error(layerError, req, res, next);
+    } else {
+      layer.handle_request(req, res, next);
+    }
+  }
+};
+</code></pre><p>关键部分就在这里了，这里定义了<code>next</code>函数。<br>并有<code>stack</code>储存的中间件，<code>var stack = self.stack;</code>。还有一些参数如<code>var idx = 0;</code>。<br>next能访问到这些变量，在传递<code>next</code>函数时就起到了非常重要的作用，也就是形成了闭包。<br>遍历stack数组，获取到里面的layer层，并判断该layer是否符合规则<code>matchLayer(layer, path)</code>，就比如我<code>get</code>请求<code>/login</code>，只会匹配到使用<code>app.use</code>的中间件(这是默认绑定在根部的）和符合规则的<code>get(&quot;/login&quot;)</code>的layer。<br>匹配到后，触发handle，也就是<code>layer.handle_request(req, res, next);</code>，这里就把next方法传递过去了，形成了闭包环境。</p>
+<pre><code>// layer.js
+Layer.prototype.handle_request = function handle(req, res, next) {
+  var fn = this.handle;
+  console.log(fn.toString());
+  if (fn.length &gt; 3) {
+    // not a standard request handler
+    return next();
+  }
+
+  try {
+    fn(req, res, next);
+  } catch (err) {
+    next(err);
+  }
+};
+</code></pre><p>我们知道<code>var fn = this.handle;</code>就是我们定义的回调方法。然后<code>fn(req, res, next);</code>执行我们的回调函数，我们写的回调函数(<code>app.use(function(req, res, next)</code>)的<code>next</code>就是这个<code>next</code>方法,用于一直往下遍历<code>stack</code>（因为形成了闭包，所以idx会一直增加)，寻找符合规则的<code>layer</code>执行它的<code>handle</code>回调函数<br>所以我们书写项目的时候，终止函数就不要写<code>next()</code>了，会耗费不必要的性能。</p>
+<p>总体就是这样吧，还有那些细节上的、匹配规则等等，有兴趣的可以去看看。</p>
+
 
                 
             </div>

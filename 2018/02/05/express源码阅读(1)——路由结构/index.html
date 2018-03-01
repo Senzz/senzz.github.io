@@ -198,7 +198,8 @@ module.exports = require(&amp;#39;./lib/express&amp;#39;);
 <p>我们平时项目引入express的源文件index.js，</p>
 <pre><code>module.exports = require(&#39;./lib/express&#39;);
 </code></pre><p>知道<code>lib/express.js</code>为主文件<br>我们先回顾下怎么用express启用服务器的</p>
-<pre><code>var server = http.createServer(app);
+<pre><code>var app = require(&#39;express&#39;)();
+var server = http.createServer(app);
 server.listen(port);
 </code></pre><p>了解的人应该知道这个http方法，<code>http.createServer([requestListener])</code>,<br><code>requestListener</code> 是一个函数，会被自动添加到 <a href="http://nodejs.cn/api/http.html#http_event_request" target="_blank" rel="noopener"><code>&#39;request&#39;</code></a> 事件</p>
 <p>了解这些后，再来看看<code>index.js</code>的代码</p>
