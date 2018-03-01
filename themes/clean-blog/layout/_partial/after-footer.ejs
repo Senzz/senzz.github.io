@@ -2,6 +2,8 @@
 <!-- jQuery -->
 <script src="https://cdn.bootcss.com/jquery/2.1.4/jquery.min.js"></script>
 
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
 <!-- Bootstrap -->
 <script src="https://cdn.bootcss.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
 
@@ -14,6 +16,7 @@
     var disqus_shortname = '<%= theme.comments.disqus_shortname %>';
 
     (function(){
+        console.log('sb')
         var dsq = document.createElement('script');
         dsq.type = 'text/javascript';
         dsq.async = true;
@@ -22,3 +25,10 @@
     }());
 </script>
 <% } %>
+
+<script type="text/javascript">
+    $(function() {
+        // highlight
+        hljs.initHighlightingOnLoad();
+    })
+</script>
