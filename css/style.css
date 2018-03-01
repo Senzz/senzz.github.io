@@ -442,6 +442,9 @@ body {
   webkit-tap-highlight-color: #0085a1;
 }
 @media only screen and (max-width: 767px) {
+  body {
+    font-size: 18px;
+  }
   div.imgImg {
     zoom: 50%;
   }
