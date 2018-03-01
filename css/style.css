@@ -441,6 +441,11 @@ img::-moz-selection {
 body {
   webkit-tap-highlight-color: #0085a1;
 }
+@media only screen and (max-width: 767px) {
+  div.imgImg {
+    zoom: 50%;
+  }
+}
 article .container .row img {
   max-width: 100% !important;
   height: auto;
