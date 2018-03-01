@@ -10,6 +10,13 @@
 
     <!--Description-->
     
+        <meta name="description" content="express主要有一下几种中间件：应用级中间件、路由级中间件、错误处理中间件、内置中间件、第三方中间件
+应用级中间件和路由级中间件其实差不多，下面分析会涉及。
+我们先看看app.use是怎么实现的
+// application.js
+app.use = function use(fn) {
+  v">
+    
 
     <!--百度seo-->
     
@@ -24,7 +31,7 @@
 
     <!--Open Graph Title-->
     
-        <meta property="og:title" content="Senzz"/>
+        <meta property="og:title" content="express源码分析(2)——中间件"/>
     
 
     <!--Open Graph Description-->
@@ -35,7 +42,7 @@
 
     <!--Type page-->
     
-        <meta property="og:type" content="website" />
+        <meta property="og:type" content="article" />
     
 
     <!--Page Cover-->
@@ -46,7 +53,7 @@
 
     <!-- Title -->
     
-    <title>Senzz</title>
+    <title>express源码分析(2)——中间件 - Senzz</title>
 
     <!-- Bootstrap Core CSS -->
     <link href="https://cdn.bootcss.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
@@ -135,15 +142,22 @@
 
     <!-- Main Content -->
     <!-- Page Header -->
-<!-- Set your background image for this header in the theme's configuration: index_cover -->
-<header class="intro-header" style="background-color:#2e353d;position:relative;"> <!-- style="background-image: url('/img/background-icon.png')" -->
+<!-- Set your background image for this header in your post front-matter: cover -->
+
+<header class="intro-header" style="background-color:#2e353d;position:relative;">
     <div class="container">
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-                <div class="site-heading">
-                    <h1>Senzz</h1>
-                    <hr class="small">
-                    <span class="subheading"></span>
+                <div class="post-heading">
+                    <h1>express源码分析(2)——中间件</h1>
+                    
+                    <span class="meta">
+                        <!-- Date and Author -->
+                        
+                        
+                            2018-02-08
+                        
+                    </span>
                 </div>
             </div>
         </div>
@@ -153,81 +167,175 @@
     </div>
 </header>
 
-<!-- Main Content -->
-<div class="container">
-    <div class="row">
-        <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-            
-                <div class="post-preview">
-    <a href="/2018/03/01/express源码分析-3-————next/">
-        <h2 class="post-title">
-            express源码分析(3)————next
-        </h2>
-        
-    </a>
-    <p class="post-meta">
-        <!-- Date and Author -->
-        
-        2018-03-01
-    </p>
-</div>
-<hr>
-            
-                <div class="post-preview">
-    <a href="/2018/02/11/express源码分析(3)——next/">
-        <h2 class="post-title">
-            express源码分析(3)——next
-        </h2>
-        
-    </a>
-    <p class="post-meta">
-        <!-- Date and Author -->
-        
-        2018-02-11
-    </p>
-</div>
-<hr>
-            
-                <div class="post-preview">
-    <a href="/2018/02/08/express源码分析(2)——中间件/">
-        <h2 class="post-title">
-            express源码分析(2)——中间件
-        </h2>
-        
-    </a>
-    <p class="post-meta">
-        <!-- Date and Author -->
-        
-        2018-02-08
-    </p>
-</div>
-<hr>
-            
-                <div class="post-preview">
-    <a href="/2018/02/05/express源码阅读(1)——路由结构/">
-        <h2 class="post-title">
-            express源码阅读(1)——路由结构
-        </h2>
-        
-    </a>
-    <p class="post-meta">
-        <!-- Date and Author -->
-        
-        2018-02-05
-    </p>
-</div>
-<hr>
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+            <!-- Tags and categories -->
+           
+                <div class="col-lg-4 col-lg-offset-2 col-md-5 col-md-offset-1 post-tags">
+                    
+                        
+
+
+<a href="/tags/express/">#express</a>
+
+
+                    
+                </div>
+                <div class="col-lg-4 col-md-5 post-categories">
+                    
+                </div>
             
 
-            <ul class="pager">
-    
-    
-</ul>
+            <!-- Gallery -->
+            
+
+            <!-- Post Main Content -->
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <p>express主要有一下几种中间件：应用级中间件、路由级中间件、错误处理中间件、内置中间件、第三方中间件</p>
+<p>应用级中间件和路由级中间件其实差不多，下面分析会涉及。</p>
+<p>我们先看看<code>app.use</code>是怎么实现的</p>
+<pre><code>// application.js
+app.use = function use(fn) {
+  var offset = 0;
+  var path = &#39;/&#39;;
+
+  // default path to &#39;/&#39;
+  // disambiguate app.use([fn])
+  if (typeof fn !== &#39;function&#39;) {
+    var arg = fn;
+
+    while (Array.isArray(arg) &amp;&amp; arg.length !== 0) {
+      arg = arg[0];
+    }
+
+    // first arg is the path
+    if (typeof arg !== &#39;function&#39;) {
+      offset = 1;
+      path = fn;
+    }
+  }
+
+  // 我们的参数fns
+  var fns = flatten(slice.call(arguments, offset));
+
+  if (fns.length === 0) {
+    throw new TypeError(&#39;app.use() requires a middleware function&#39;)
+  }
+
+  // setup router
+  this.lazyrouter();
+  var router = this._router;
+
+  fns.forEach(function (fn) {
+    // non-express app
+    if (!fn || !fn.handle || !fn.set) {
+      return router.use(path, fn);
+    }
+
+    debug(&#39;.use app under %s&#39;, path);
+    fn.mountpath = path;
+    fn.parent = this;
+
+    // restore .app property on req and res
+    router.use(path, function mounted_app(req, res, next) {
+      var orig = req.app;
+      fn.handle(req, res, function (err) {
+        setPrototypeOf(req, orig.request)
+        setPrototypeOf(res, orig.response)
+        next(err);
+      });
+    });
+
+    // mounted an app
+    fn.emit(&#39;mount&#39;, this);
+  }, this);
+
+  return this;
+};
+
+app.lazyrouter = function lazyrouter() {
+  if (!this._router) {
+    this._router = new Router({
+      caseSensitive: this.enabled(&#39;case sensitive routing&#39;),
+      strict: this.enabled(&#39;strict routing&#39;)
+    });
+
+    this._router.use(query(this.get(&#39;query parser fn&#39;)));
+    this._router.use(middleware.init(this));
+  } 
+};
+</code></pre><p><code>app.use</code>触发了<code>router.use</code>方法<br>再来看看<code>this._router.use</code>的实现，其实也就是路由级中间件的use方法,<br>我们使用路由级中间件<code>const router = express.Router();</code> 就是创建了一个router方法，之后再供<code>app.use(path, router)</code>来调用</p>
+<pre><code>proto.use = function use(fn) {
+  var offset = 0;
+  var path = &#39;/&#39;;
+
+  // default path to &#39;/&#39;
+  // disambiguate router.use([fn])
+  if (typeof fn !== &#39;function&#39;) {
+    var arg = fn;
+
+    while (Array.isArray(arg) &amp;&amp; arg.length !== 0) {
+      arg = arg[0];
+    }
+
+    // first arg is the path
+    if (typeof arg !== &#39;function&#39;) {
+      offset = 1;
+      path = fn;
+    }
+  }
+
+  var callbacks = flatten(slice.call(arguments, offset));
+
+  if (callbacks.length === 0) {
+    throw new TypeError(&#39;Router.use() requires a middleware function&#39;)
+  }
+
+  for (var i = 0; i &lt; callbacks.length; i++) {
+    var fn = callbacks[i];
+
+    if (typeof fn !== &#39;function&#39;) {
+      throw new TypeError(&#39;Router.use() requires a middleware function but got a &#39; + gettype(fn))
+    }
+
+    // add the middleware
+    debug(&#39;use %o %s&#39;, path, fn.name || &#39;&lt;anonymous&gt;&#39;)
+
+    var layer = new Layer(path, {
+      sensitive: this.caseSensitive,
+      strict: false,
+      end: false
+    }, fn);
+
+    layer.route = undefined;
+
+    this.stack.push(layer);
+  }
+
+  return this;
+};
+</code></pre><p>其实跟app.use实现差不多，主要里面创建了<code>layer实例</code>, layer的handle就是我们的回调函数,并把layer层存储在router的stack数组中</p>
+<p>所以大概是 app._router里面有个stack数组，stack里面存储Layer实例层，layer的hanlde属性也储存着我们的回调方法</p>
+<p>下篇再进一步讲下express的next的实现，这是中间件的关键。<br>理解通了前两篇文章，下一篇才能更好的理解</p>
+
+
+                
+            </div>
+
+            <!-- Comments -->
+            
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    
+
+
+                </div>
+            
         </div>
     </div>
-</div>
-
-
+</article>
 
     <!-- Footer -->
     <hr />
