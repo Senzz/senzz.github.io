@@ -191,9 +191,9 @@ observer应该是Vue的一个核心模块，也即是Vue的响应式原理。主
             <!-- Post Main Content -->
             <div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-1">
                 <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><hr>
-<p>observer应该是Vue的一个核心模块，也即是Vue的响应式原理。主要通过底层的<code>Object.defineProperty</code>,来定义属性的<code>getter/setter</code>来实现。<br>每个组件实例都有相应的<code>watcher</code>实例对象，它会在组件渲染的过程中把属性记录为依赖，之后当依赖项的 setter 被调用时，会通知 watcher 重新计算，从而致使它关联的组件得以更新。</p>
+<p>observer应该是Vue的一个核心模块，也即是Vue的响应式原理。主要通过底层的<code>Object.defineProperty</code>,来定义属性的<code>getter/setter</code>来实现。<br>每个组件实例都有相应的<code>watcher</code>实例对象，它会在组件渲染的过程中把属性记录为依赖，之后当依赖项的 setter 被调用时，会通知 watcher 重新计算，从而致使它关联的组件得以更新。<br><img src="/img/vue/data.png" alt="data.png"></p>
 <h1 id="正文"><a href="#正文" class="headerlink" title="正文"></a>正文</h1><hr>
-<p>源码的版本是：<code>version: 2.5.13</code>, 当前的源码是用<code>flow.js</code>写的<br>我们写个简单的<code>App.vue</code></p>
+<p>源码的版本是：<code>version: 2.5.13</code>, 当前的源码是用<code>flow.js</code>写的<br>Observer的整体结构大概是这样的<br><img src="/img/vue/1124618109-58a55e0c03354_articlex.png" alt="Observer结构"><br>我们写个简单的<code>App.vue</code></p>
 <pre><code>&lt;template&gt;
   &lt;div id=&quot;app&quot;&gt;
     &lt;div&gt;
