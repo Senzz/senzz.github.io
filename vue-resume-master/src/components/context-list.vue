@@ -2,8 +2,8 @@
   <div class="context-list" :class="{ 'icon-margin-bottom': icon }">
     <div class="list-heading" :class="{ 'icon-class': icon }">
       <div class="title">
-        <EditImage v-if="icon" :src="icon" height="36" width="36" class="img"></EditImage>
-        <h2 class="title" :contenteditable="contenteditable">{{title}}</h2>
+        <EditImage v-if="icon" :src="icon" class="img"></EditImage>
+        <h1 class="title" :contenteditable="contenteditable">{{title}}</h1>
       </div>
       <button class="add" @click="add" :class="{ 'icon-margin-right': icon }">+</button>
     </div>
@@ -61,6 +61,25 @@
 </script>
 
 <style lang="less">
+  @media screen and (max-width: 500px) {
+    h1{
+      font-size: 10px;
+    }
+    .context-list{
+      .list-heading{
+        .title{
+          .img{
+            width: 50px !important;
+            height: 50px !important;
+            margin: 0 20px 0 50px;
+          }
+        }
+      }
+    }
+  }
+  h1{
+    font-size: 24px;
+  }
   .context-list{
     width: 100%;
     margin-bottom: 30px;

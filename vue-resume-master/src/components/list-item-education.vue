@@ -29,6 +29,11 @@
   }
 </script>
 <style lang="less">
+  @media screen and (max-width: 500px){
+    .list-item-education{
+      flex-direction: column;
+    }
+  }
   .list-item-education{
     font-size: 18px;
     font-weight: bold;
@@ -36,14 +41,14 @@
     justify-content: space-between;
     margin-bottom: 16px;
     .school{
-      width: 40%
+      // width: 40%
     }
     .major{
-      width: 35%;
+      // width: 35%;
     }
     .date{
-      width: 25%;
-      text-align: right;
+      // width: 25%;
+      // text-align: right;
     }
   }
 </style>

@@ -45,7 +45,23 @@
   }
 </script>
 <style lang="less">
+  @media screen and (max-width: 500px){
+    .list-item-experience{
+      .heading{
+        font-size: 12px;
+        flex-direction: column;
+        .company, .job{
+          width: 100% !important;
+        }
+        span.date{
+          text-align: inherit;
+        }
+      }
+      
+    }
+  }
   .list-item-experience{
+    margin: 0px 0 25px 0;
     .heading{
       font-size: 18px;
       font-weight: bold;
@@ -59,7 +75,7 @@
         width: 35%;
       }
       .date{
-        width: 25%;
+        // width: 25%;
         text-align: right;
       }
     }

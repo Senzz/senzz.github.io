@@ -1,5 +1,5 @@
 <template>
-  <div class="edit-image" :style="{ width: width + 'px', height: height + 'px'}">
+  <div class="edit-image" :style="{ width: width, height: height}">
     <img :src="imgSrc" alt="image" :class="{ circle: isCircle }">
     <input :style="{ display: contenteditable ? 'block' : 'none' }" :disabled="!contenteditable" type="file" accept="image/gif,image/jpeg,image/jpg,image/png" @change="changeImage">
   </div>
@@ -10,11 +10,9 @@
     props: {
       width: {
         type: String,
-        default: '36'
       },
       height: {
         type: String,
-        default: '36'
       },
       src: {
         type: String,
@@ -47,10 +45,18 @@
   }
 </script>
 <style lang="less">
+  @media screen and (max-width: 500px) {
+    div.edit-image{
+      width: 40px;
+      height: 40px;
+    }
+  }
   .edit-image{
     position: relative;
     display: inline-block;
     z-index: 999;
+    width: 60px;
+    height: 60px;
     img{
       width: 100%;
       height: 100%;

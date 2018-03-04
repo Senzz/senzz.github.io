@@ -41,7 +41,7 @@
     }
   }
 </script>
-<style lang="less">
+<style lang="less" scoped>
   .list-item-skill{
     position: relative;
     display: flex;
@@ -54,7 +54,7 @@
       font-size: 20px;
     }
     input.title{
-      width: 120px;
+      width: 140px;
     }
     input.percent{
       width: 30px;
@@ -63,7 +63,9 @@
     span.line{
       position: relative;
       display: inline-block;
-      width: 520px;
+      // width: 520px;
+      flex:1;
+      margin: 0 20px;
       height: 8px;
       background-color: #c2c2c2;
       .show{

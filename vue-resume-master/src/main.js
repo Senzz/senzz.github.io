@@ -4,10 +4,12 @@ import Vue from 'vue'
 import App from './App'
 import router from './router'
 import mixins from './mixins'
+import 'lib-flexible/flexible.js'
 
 Vue.mixin(mixins)
 
 Vue.config.productionTip = false
+
 
 /* eslint-disable no-new */
 new Vue({

@@ -1,7 +1,7 @@
 <template>
   <div class="brief">
     <div class="avatar">
-      <EditImage :src="require('@/assets/logo_name.jpg')" width="212" height="212" :isCircle="true" class="img"></EditImage>
+      <EditImage :src="require('@/assets/logo_name.jpg')"   :isCircle="true" class="img"></EditImage>
       <!-- <img src="./assets/photo.png" alt="photo"> -->
       <div class="name" :contenteditable="contenteditable">{{name}}</div>
       <div class="job" :contenteditable="contenteditable">{{job}}</div>
@@ -59,6 +59,8 @@
       justify-content: center;
       &>.img{
         margin-bottom: 45px;
+        width: 212px;
+        height: 212px;
       }
       .name{
         font-size: 32px;
