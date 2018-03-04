@@ -39,6 +39,9 @@ p {
   line-height: 1.5;
   margin: 30px 0;
 }
+pre {
+  overflow: visible;
+}
 p a,
 li a {
   text-decoration: underline;

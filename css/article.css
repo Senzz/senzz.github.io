@@ -78,6 +78,7 @@ figure.highlight pre {
   padding: 0;
   margin: 0;
   background: none;
+  overflow: visible;
 }
 figure.highlight table {
   margin-top: 0;

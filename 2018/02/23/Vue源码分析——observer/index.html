@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head tag -->
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!--Description-->
+    
+        <meta name="description" content="前言
+observer应该是Vue的一个核心模块，也即是Vue的响应式原理。主要通过底层的Object.defineProperty,来定义属性的getter/setter来实现。每个组件实例都有相应的watcher实例对象，它会在组件渲染的过程中把属性记录为依赖，之后当依赖项的 setter 被调">
+    
+
+    <!--百度seo-->
+    
+        <meta name="baidu-site-verification" content="d8whMjVrku" />
+    
+    
+
+    <!--Author-->
+    
+        <meta name="author" content="Senzz">
+    
+
+    <!--Open Graph Title-->
+    
+        <meta property="og:title" content="Vue源码分析——observer"/>
+    
+
+    <!--Open Graph Description-->
+    
+
+    <!--Open Graph Site Name-->
+    <meta property="og:site_name" content="Senzz"/>
+
+    <!--Type page-->
+    
+        <meta property="og:type" content="article" />
+    
+
+    <!--Page Cover-->
+    
+
+        <meta name="twitter:card" content="summary" />
+    
+
+    <!-- Title -->
+    
+    <title>Vue源码分析——observer - Senzz</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="https://cdn.bootcss.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+
+    <link href="https://cdn.bootcss.com/highlight.js/9.11.0/styles/github.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/style.css">
+
+    <!-- Custom Fonts -->
+    <link href="https://cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
+    <link href="//fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css">
+    <link href="//fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="//oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="//oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- Gallery -->
+    <link href="https://cdn.bootcss.com/featherlight/1.3.5/featherlight.min.css" rel="stylesheet">
+
+    <!-- Google Analytics -->
+    
+
+
+    <!-- favicon -->
+    
+	
+</head>
+
+
+<body>
+
+    <!-- Menu -->
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Senzz</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav navbar-right">
+                
+                    <li>
+                        <a href="/">
+                            
+                                Home
+                             
+                        </a>
+                    </li>
+                
+                    <li>
+                        <a href="/archives">
+                            
+                                Archives
+                             
+                        </a>
+                    </li>
+                
+                    <li>
+                        <a href="/about">
+                            
+                                About
+                             
+                        </a>
+                    </li>
+                
+            </ul>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+
+    <!-- Main Content -->
+    <!-- Page Header -->
+<!-- Set your background image for this header in your post front-matter: cover -->
+
+<header class="intro-header" style="background-color:#2e343c;position:relative;">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <h1>Vue源码分析——observer</h1>
+                    
+                    <span class="meta">
+                        <!-- Date and Author -->
+                        
+                        
+                            2018-02-23
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div style='position:absolute;bottom: 20px;right:0;' class='imgImg'> 
+        <img src='/img/background-icon.png' />
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+            <!-- Tags and categories -->
+           
+                <div class="col-lg-4 col-lg-offset-2 col-md-5 col-md-offset-1 post-tags">
+                    
+                        
+
+
+<a href="/tags/Vue/">#Vue</a>
+
+
+                    
+                </div>
+                <div class="col-lg-4 col-md-5 post-categories">
+                    
+                </div>
+            
+
+            <!-- Gallery -->
+            
+
+            <!-- Post Main Content -->
+            <div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><hr>
+<p>observer应该是Vue的一个核心模块，也即是Vue的响应式原理。主要通过底层的<code>Object.defineProperty</code>,来定义属性的<code>getter/setter</code>来实现。<br>每个组件实例都有相应的<code>watcher</code>实例对象，它会在组件渲染的过程中把属性记录为依赖，之后当依赖项的 setter 被调用时，会通知 watcher 重新计算，从而致使它关联的组件得以更新。</p>
+<h1 id="正文"><a href="#正文" class="headerlink" title="正文"></a>正文</h1><hr>
+<p>源码的版本是：<code>version: 2.5.13</code>, 当前的源码是用<code>flow.js</code>写的<br>我们写个简单的<code>App.vue</code></p>
+<pre><code>&lt;template&gt;
+  &lt;div id=&quot;app&quot;&gt;
+    &lt;div&gt;
+      count: {{count}} 
+      &lt;button @click=&#39;add&#39;&gt;+&lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/template&gt;
+
+&lt;script&gt;
+export default {
+  name: &#39;App&#39;,
+  data () {
+    return {
+      count: 0
+    }
+  },
+  methods: {
+    add () {
+      this.count++
+    }
+  }
+}
+&lt;/script&gt;
+</code></pre><p>data的count会渲染到使视图中，而点击button时，count会添加1，并更新到视图中。这就是响应式，当count修改的时候，就是通知视图去更新；</p>
+<p>我们先从Vue怎么初始化data说起</p>
+<pre><code>// core/instance/state.js
+
+function initData (vm: Component) {
+  let data = vm.$options.data
+  data = vm._data = typeof data === &#39;function&#39;
+    ? getData(data, vm)
+    : data || {}
+  if (!isPlainObject(data)) {
+    data = {}
+    process.env.NODE_ENV !== &#39;production&#39; &amp;&amp; warn(
+      &#39;data functions should return an object:\n&#39; +
+      &#39;https://vuejs.org/v2/guide/components.html#data-Must-Be-a-Function&#39;,
+      vm
+    )
+  }
+  // proxy data on instance
+  const keys = Object.keys(data)
+  const props = vm.$options.props
+  const methods = vm.$options.methods
+  let i = keys.length
+  while (i--) {
+    const key = keys[i]
+    if (process.env.NODE_ENV !== &#39;production&#39;) {
+      if (methods &amp;&amp; hasOwn(methods, key)) {
+        warn(
+          `Method &quot;${key}&quot; has already been defined as a data property.`,
+          vm
+        )
+      }
+    }
+    if (props &amp;&amp; hasOwn(props, key)) {
+      process.env.NODE_ENV !== &#39;production&#39; &amp;&amp; warn(
+        `The data property &quot;${key}&quot; is already declared as a prop. ` +
+        `Use prop default value instead.`,
+        vm
+      )
+    } else if (!isReserved(key)) {
+      // 代理这些函数，  this[key] = this._data[key]
+      proxy(vm, `_data`, key)
+    }
+  }
+  // observe data
+  // 观察data
+  observe(data, true /* asRootData */)
+}
+</code></pre><p>初始化data，主要作用是代理了data的这些属性，<code>this[key] = this._data[key]</code>，所以我们可以通过<code>this[key]</code>来获取和赋值。<br>再转移到<code>observe</code>函数的实现</p>
+<pre><code>// core/observer/index.js
+export function observe (value: any, asRootData: ?boolean): Observer | void {
+  if (!isObject(value) || value instanceof VNode) {
+    return
+  } 
+  let ob: Observer | void
+  if (hasOwn(value, &#39;__ob__&#39;) &amp;&amp; value.__ob__ instanceof Observer) {
+    ob = value.__ob__
+  } else if (
+    observerState.shouldConvert &amp;&amp;
+    !isServerRendering() &amp;&amp;
+    (Array.isArray(value) || isPlainObject(value)) &amp;&amp;
+    Object.isExtensible(value) &amp;&amp;
+    !value._isVue
+  ) {
+    ob = new Observer(value)
+  }
+  if (asRootData &amp;&amp; ob) {
+    ob.vmCount++
+  }
+  return ob
+}
+</code></pre><p>这段主要<code>new</code>一个<code>Observer</code>实例,已经存在的就不用</p>
+<pre><code>// core/observer/index.js
+export class Observer {
+  value: any;
+  dep: Dep;
+  vmCount: number; // number of vms that has this object as root $data
+
+  constructor (value: any) {
+    this.value = value
+    this.dep = new Dep()
+    this.vmCount = 0
+    def(value, &#39;__ob__&#39;, this)
+    if (Array.isArray(value)) {
+      const augment = hasProto
+        ? protoAugment
+        : copyAugment
+      augment(value, arrayMethods, arrayKeys)
+      this.observeArray(value)
+    } else {
+      this.walk(value)
+    }
+  }
+
+  /**
+   * Walk through each property and convert them into
+   * getter/setters. This method should only be called when
+   * value type is Object.
+   */
+  walk (obj: Object) {
+    const keys = Object.keys(obj)
+    for (let i = 0; i &lt; keys.length; i++) {
+      defineReactive(obj, keys[i], obj[keys[i]])
+    }
+  }
+
+  /**
+   * Observe a list of Array items.
+   */
+  observeArray (items: Array&lt;any&gt;) {
+    for (let i = 0, l = items.length; i &lt; l; i++) {
+      observe(items[i])
+    }
+  }
+}
+</code></pre><p>该实例有3个属性，<code>value</code>，<code>dep</code>，<code>vmCount</code>。<br><code>value</code>也就是我们赋予它的初始值;<br><code>dep</code>是一个<code>Dep</code>实例,我们待会再看它的具体实现。我把它当成一个发布者，等待<code>watcher</code>来订阅; 最后形成依赖关系；<br><code>def(value, &#39;__ob__&#39;, this)</code>,则主要是在<code>value</code>中添加一个<code>__ob__</code>属性，指向<code>this</code><br>我们讲讲上面这段代码<br><code>constructor</code>方法判断了<code>value</code>是否为数组，是的话就<code>Observe a list of Array items</code>;<br>最后都会经过walk,重新定义data的属性，转化为响应式属性</p>
+<p>我们先看Dep的实现，后面才能更好的讲解<code>defineReactive</code></p>
+<pre><code>export default class Dep {
+  static target: ?Watcher;
+  id: number;
+  subs: Array&lt;Watcher&gt;;
+
+  constructor () {
+    this.id = uid++
+    this.subs = []
+  }
+
+  addSub (sub: Watcher) {
+    this.subs.push(sub)
+  }
+
+  removeSub (sub: Watcher) {
+    remove(this.subs, sub)
+  }
+
+  // 订阅，当前watcher添加到subs当中
+  depend () { 
+    if (Dep.target) {
+      Dep.target.addDep(this)
+    }
+  }
+
+  // 通知到每个subs执行update
+  notify () {
+    // stabilize the subscriber list first
+    const subs = this.subs.slice()
+    for (let i = 0, l = subs.length; i &lt; l; i++) {
+      subs[i].update()
+    }
+  }
+}
+
+// the current target watcher being evaluated.
+// this is globally unique because there could be only one
+// watcher being evaluated at any time.
+Dep.target = null
+const targetStack = []
+
+export function pushTarget (_target: Watcher) {
+  if (Dep.target) targetStack.push(Dep.target)
+  Dep.target = _target
+}
+
+export function popTarget () {
+  Dep.target = targetStack.pop()
+}
+</code></pre><p><code>subs</code>就是存储<code>watcher</code>（订阅者）的<br><code>Dep.target</code>的值就是当前的<code>watcher</code><br><code>depend()</code>形成依赖关系，把当前的<code>watcher</code>添加进<code>subs</code>中;<br><code>notify()</code>,相当于发布,通知所有的订阅者(<code>watcher</code>)执行<code>update</code></p>
+<p>我们再来看<code>defineReactive</code></p>
+<pre><code>// core/observer/index.js
+export function defineReactive (
+  obj: Object,
+  key: string,
+  val: any,
+  customSetter?: ?Function,
+  shallow?: boolean
+) {
+  const dep = new Dep()
+
+  const property = Object.getOwnPropertyDescriptor(obj, key)
+  if (property &amp;&amp; property.configurable === false) {
+    return
+  }
+
+  // cater for pre-defined getter/setters
+  const getter = property &amp;&amp; property.get
+  const setter = property &amp;&amp; property.set
+
+  let childOb = !shallow &amp;&amp; observe(val)
+  Object.defineProperty(obj, key, {
+    enumerable: true,
+    configurable: true,
+    get: function reactiveGetter () {
+      const value = getter ? getter.call(obj) : val
+      if (Dep.target) {
+        // 订阅该属性
+        dep.depend()
+        if (childOb) {
+          childOb.dep.depend()
+          if (Array.isArray(value)) {
+            dependArray(value)
+          }
+        }
+      }
+      return value
+    },
+    set: function reactiveSetter (newVal) {
+      const value = getter ? getter.call(obj) : val
+      /* eslint-disable no-self-compare */
+      if (newVal === value || (newVal !== newVal &amp;&amp; value !== value)) {
+        return
+      }
+      /* eslint-enable no-self-compare */
+      if (process.env.NODE_ENV !== &#39;production&#39; &amp;&amp; customSetter) {
+        customSetter()
+      }
+      if (setter) {
+        setter.call(obj, newVal)
+      } else {
+        val = newVal
+      }
+      childOb = !shallow &amp;&amp; observe(newVal)
+      dep.notify()
+    }
+  })
+}
+</code></pre><p>这里形成了闭包，每个属性都有一个<code>dep</code>实例，会一直存在，供<code>get</code>，<code>set</code>调用<br><code>get</code>方法中，我们已经知道<code>Dep.target</code>就是一个<code>watcher</code>，当<code>Dep.target</code>存在的时候，就会把当前的<code>Dep.target</code>加入到<code>dep</code>实例的<code>subs</code>当中，形成依赖关系<br><code>set</code>方法判断是否跟之前的<code>value</code>相同，不相同则执行<code>dep.notify()</code>，通知所有的订阅者(<code>watcher</code>)</p>
+<p>目前已大致理解清了结构；<br>把data的属性遍历，转换为响应式属性，重新定义它的<code>getter/setter</code>。<code>dep</code>来存储依赖关系并作为发布者的角色，<code>watcher</code>相当于订阅者<br><code>getter</code>获取值的时候，主要用于形成依赖，把当前的<code>watcher</code>加入到需要的属性的dep当中，形成依赖。<br><code>setter</code>修改值的时候，通过dep形成的依赖，通知所有订阅了该属性的<code>watcher</code></p>
+<p>最后我们看看<code>watcher</code>的实现</p>
+<pre><code>// core/observer/watcher.js
+export default class Watcher {
+  constructor (
+    vm: Component,
+    expOrFn: string | Function,
+    cb: Function,
+    options?: ?Object,
+    isRenderWatcher?: boolean
+  ) {
+    this.vm = vm
+    if (isRenderWatcher) {
+      vm._watcher = this
+    }
+    // 把this加入到组件的_watcher当中
+    vm._watchers.push(this)
+    // options
+    if (options) {
+      this.deep = !!options.deep
+      this.user = !!options.user
+      this.lazy = !!options.lazy
+      this.sync = !!options.sync
+    } else {
+      this.deep = this.user = this.lazy = this.sync = false
+    }
+    this.expression = process.env.NODE_ENV !== &#39;production&#39;
+      ? expOrFn.toString()
+      : &#39;&#39;
+    // parse expression for getter
+    if (typeof expOrFn === &#39;function&#39;) {
+      this.getter = expOrFn
+    } else {
+      this.getter = parsePath(expOrFn)
+      if (!this.getter) {
+        this.getter = function () {}
+        process.env.NODE_ENV !== &#39;production&#39; &amp;&amp; warn(
+          `Failed watching path: &quot;${expOrFn}&quot; ` +
+          &#39;Watcher only accepts simple dot-delimited paths. &#39; +
+          &#39;For full control, use a function instead.&#39;,
+          vm
+        )
+      }
+    }
+    this.value = this.lazy
+      ? undefined
+      : this.get()
+  }
+  /**
+   * Evaluate the getter, and re-collect dependencies.
+   */
+  get () {
+    // Dep.target赋值为当前实例
+    pushTarget(this)
+    let value
+    const vm = this.vm
+    try {
+      value = this.getter.call(vm, vm)
+    } catch (e) {
+      if (this.user) {
+        handleError(e, vm, `getter for watcher &quot;${this.expression}&quot;`)
+      } else {
+        throw e
+      }
+    } finally {
+      // &quot;touch&quot; every property so they are all tracked as
+      // dependencies for deep watching
+      if (this.deep) {
+        traverse(value)
+      }
+      popTarget()
+      this.cleanupDeps()
+    }
+    return value
+  }
+  /**
+   * Add a dependency to this directive.
+   */
+  addDep (dep: Dep) {
+    const id = dep.id
+    if (!this.newDepIds.has(id)) {
+      this.newDepIds.add(id)
+      this.newDeps.push(dep)
+      if (!this.depIds.has(id)) {
+        dep.addSub(this)
+      }
+    }
+  }
+  /**
+   * Subscriber interface.
+   * Will be called when a dependency changes.
+   */
+  update () {
+    /* istanbul ignore else */
+    if (this.lazy) {
+      this.dirty = true
+    } else if (this.sync) {
+      this.run()
+    } else {
+      queueWatcher(this)
+    }
+  }
+
+  /**
+   * Scheduler job interface.
+   * Will be called by the scheduler.
+   */
+  run () {
+    if (this.active) {
+      const value = this.get()
+      if (
+        value !== this.value ||
+        // Deep watchers and watchers on Object/Arrays should fire even
+        // when the value is the same, because the value may
+        // have mutated.
+        isObject(value) ||
+        this.deep
+      ) {
+        // set new value
+        const oldValue = this.value
+        this.value = value
+        if (this.user) {
+          try {
+            this.cb.call(this.vm, value, oldValue)
+          } catch (e) {
+            handleError(e, this.vm, `callback for watcher &quot;${this.expression}&quot;`)
+          }
+        } else {
+          this.cb.call(this.vm, value, oldValue)
+        }
+      }
+    }
+  }
+}
+</code></pre><p>当<code>lazy</code>为<code>false</code>的时候,也就是不是懒加载的时候，立即执行<code>get()</code><br><code>pushTarget(this)</code>把Dep.target赋值为当前实例watcher<br><code>this.getter</code>就是我们传入的参数<code>expOrFn</code>，它就是来收集依赖的，通过执行里面的函数，获取属性<code>this[key]</code>来执行我们重新定义的响应式属性的<code>getter</code>,形成依赖关系。（不懂的可以回顾<code>defineReactive</code>)。<br>修改响应式属性的时候，通知订阅了该属性的<code>watcher</code>去触发<code>update()</code>，如果是同步的，立刻执行<code>run()</code>,否则加入到<code>queueWatcher</code>;<br><code>run()</code>中<code>const value = this.get()</code>会触发<code>this.getter</code>，并且重新更新依赖关系</p>
+<p>例如组件在<code>mounted</code>生命周期的时候，里面会创建一个watcher实例，也就是我们所说的每个组件都会创建一个watcher实例。<br><code>new Watcher(vm, updateComponent, noop, null, true /* isRenderWatcher */)</code>，updateComponent里面需要获取一些需要的响应式属性<code>this._data[key]</code>，触发属性的<code>getter</code>，最后形成依赖关系。<br>修改订阅了的属性的时候，通知该<code>watcher</code>去<code>update()</code>，最后执行<code>run()</code>。<code>run()</code>中执行<code>updateComponent</code>，以达到重新更新视图的效果，并重新获取依赖关系</p>
+<p>自己再举个例子：</p>
+<pre><code>function getter(){
+  return this.a + this.b;
+}
+const w1 = new Watcher(vm, getter, noop, null);
+</code></pre><p>执行<code>getter</code>的时候，就是为了获取<code>this.a</code>和<code>this.b</code>的值，而<code>a</code>和<code>b</code>属性已经在<code>defineReactive</code>中重新定义，获取就会属性的触发<code>getter</code>，最后获取形成依赖关系。<br>当我们要修改a的时候, <code>this.a = 2</code>，就是通知订阅了该属性的<code>w1</code>, 执行<code>w1.update()</code>, 最后<code>run</code>中再执行<code>getter</code>函数，并且重新获取依赖。</p>
+<p>理清楚这个例子也就差不多理解这个整个过程了。</p>
+
+
+                
+            </div>
+
+            <!-- Comments -->
+            
+                <div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    
+
+
+                </div>
+            
+        </div>
+    </div>
+</article>
+
+    <!-- Footer -->
+    <hr />
+
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    
+
+                    
+
+                    
+                        <li>
+                            <a href="https://github.com/senzz" target="_blank">
+                                <span class="fa-stack fa-lg">
+                                    <i class="fa fa-circle fa-stack-2x"></i>
+                                    <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                                </span>
+                            </a>
+                        </li>
+                    
+
+                    
+
+                    
+
+                    
+                </ul>
+                <p class="copyright text-muted">Copyright &copy; 2018 Senzz<br></p>
+                <!-- <p class="copyright text-muted">Original Theme <a target="_blank" href="http://startbootstrap.com/template-overviews/clean-blog/">Clean Blog</a> from <a href="http://startbootstrap.com/" target="_blank">Start Bootstrap</a></p>
+                <p class="copyright text-muted">Adapted for <a target="_blank" href="https://hexo.io/">Hexo</a> by <a href="http://www.codeblocq.com/" target="_blank">Jonathan Klughertz</a></p> -->
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+    <!-- After footer scripts -->
+    
+<!-- jQuery -->
+<script src="https://cdn.bootcss.com/jquery/2.1.4/jquery.min.js"></script>
+
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+<!-- Bootstrap -->
+<script src="https://cdn.bootcss.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+
+<!-- Gallery -->
+<script src="https://cdn.bootcss.com/featherlight/1.3.5/featherlight.min.js" type="text/javascript" charset="utf-8"></script>
+
+<!-- Disqus Comments -->
+
+
+<script type="text/javascript">
+    $(function() {
+        // highlight
+        hljs.initHighlightingOnLoad();
+    })
+</script>
+
+
+</body>
+
+</html>

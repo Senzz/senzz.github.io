@@ -12,9 +12,8 @@
     
         <meta name="description" content="由于最近2个面试都提到了express，需要了解中间件怎么运作，内部原理是什么，所以特意去看了express源码，最后出来了这篇文章。 
 
-我们平时项目引入express的源文件index.js，
-module.exports = require(&amp;#39;./lib/express&amp;#39;);
-">
+源码是当前最新版本，version：4.16.2我们平时项目引入express的源文件index.js，
+module.exports = require(&amp;#">
     
 
     <!--百度seo-->
@@ -146,7 +145,7 @@ module.exports = require(&amp;#39;./lib/express&amp;#39;);
 <header class="intro-header" style="background-color:#2e343c;position:relative;">
     <div class="container">
         <div class="row">
-            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+            <div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-1">
                 <div class="post-heading">
                     <h1>express源码阅读(1)——路由结构</h1>
                     
@@ -192,10 +191,10 @@ module.exports = require(&amp;#39;./lib/express&amp;#39;);
             
 
             <!-- Post Main Content -->
-            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+            <div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-1">
                 <p>由于最近2个面试都提到了express，需要了解中间件怎么运作，内部原理是什么，所以特意去看了<a href="https://github.com/expressjs/express" target="_blank" rel="noopener">express源码</a>，最后出来了这篇文章。 </p>
 <hr>
-<p>我们平时项目引入express的源文件index.js，</p>
+<p>源码是当前最新版本，<code>version：4.16.2</code><br>我们平时项目引入express的源文件index.js，</p>
 <pre><code>module.exports = require(&#39;./lib/express&#39;);
 </code></pre><p>知道<code>lib/express.js</code>为主文件<br>我们先回顾下怎么用express启用服务器的</p>
 <pre><code>var app = require(&#39;express&#39;)();
@@ -440,7 +439,7 @@ methods.forEach(function(method){
 
             <!-- Comments -->
             
-                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-1">
                     
 
 
@@ -457,7 +456,7 @@ methods.forEach(function(method){
 <footer>
     <div class="container">
         <div class="row">
-            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+            <div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-1">
                 <ul class="list-inline text-center">
                     
 
