@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head tag -->
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!--Description-->
+    
+        <meta name="description" content="看这篇文之前最好先看写的observer分析方便更好的理解
+直接上源码version: 2.5.13, 初始化computed
+// core/instance/state.js
+const computedWatcherOptions = { lazy: true }
+
+function init">
+    
+
+    <!--百度seo-->
+    
+        <meta name="baidu-site-verification" content="d8whMjVrku" />
+    
+    
+
+    <!--Author-->
+    
+        <meta name="author" content="Senzz">
+    
+
+    <!--Open Graph Title-->
+    
+        <meta property="og:title" content="Vue源码分析——computed"/>
+    
+
+    <!--Open Graph Description-->
+    
+
+    <!--Open Graph Site Name-->
+    <meta property="og:site_name" content="Senzz"/>
+
+    <!--Type page-->
+    
+        <meta property="og:type" content="article" />
+    
+
+    <!--Page Cover-->
+    
+
+        <meta name="twitter:card" content="summary" />
+    
+
+    <!-- Title -->
+    
+    <title>Vue源码分析——computed - Senzz</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="https://cdn.bootcss.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+
+    <link href="https://cdn.bootcss.com/highlight.js/9.11.0/styles/github.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/style.css">
+
+    <!-- Custom Fonts -->
+    <link href="https://cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
+    <link href="//fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css">
+    <link href="//fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="//oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="//oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- Gallery -->
+    <link href="https://cdn.bootcss.com/featherlight/1.3.5/featherlight.min.css" rel="stylesheet">
+
+    <!-- Google Analytics -->
+    
+
+
+    <!-- favicon -->
+    
+	
+</head>
+
+
+<body>
+
+    <!-- Menu -->
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Senzz</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav navbar-right">
+                
+                    <li>
+                        <a href="/">
+                            
+                                Home
+                             
+                        </a>
+                    </li>
+                
+                    <li>
+                        <a href="/archives">
+                            
+                                Archives
+                             
+                        </a>
+                    </li>
+                
+                    <li>
+                        <a href="/about">
+                            
+                                About
+                             
+                        </a>
+                    </li>
+                
+            </ul>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+
+    <!-- Main Content -->
+    <!-- Page Header -->
+<!-- Set your background image for this header in your post front-matter: cover -->
+
+<header class="intro-header" style="background-color:#2e343c;position:relative;">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <h1>Vue源码分析——computed</h1>
+                    
+                    <span class="meta">
+                        <!-- Date and Author -->
+                        
+                        
+                            2018-02-27
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div style='position:absolute;bottom: 20px;right:0;' class='imgImg'> 
+        <img src='/img/background-icon.png' />
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+            <!-- Tags and categories -->
+           
+
+            <!-- Gallery -->
+            
+
+            <!-- Post Main Content -->
+            <div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <p>看这篇文之前最好先看写的<a href="/2018/02/23/Vue源码分析——observer/" target="_blank">observer分析</a>方便更好的理解</p>
+<p>直接上源码<code>version: 2.5.13</code>, 初始化<code>computed</code></p>
+<pre><code>// core/instance/state.js
+const computedWatcherOptions = { lazy: true }
+
+function initComputed (vm: Component, computed: Object) {
+  // $flow-disable-line
+  const watchers = vm._computedWatchers = Object.create(null)
+  // computed properties are just getters during SSR
+  const isSSR = isServerRendering()
+
+  for (const key in computed) {
+    const userDef = computed[key]
+    const getter = typeof userDef === &#39;function&#39; ? userDef : userDef.get
+    if (process.env.NODE_ENV !== &#39;production&#39; &amp;&amp; getter == null) {
+      warn(
+        `Getter is missing for computed property &quot;${key}&quot;.`,
+        vm
+      )
+    }
+
+    if (!isSSR) {
+      // create internal watcher for the computed property.
+      watchers[key] = new Watcher(
+        vm,
+        getter || noop,
+        noop,
+        computedWatcherOptions
+      )
+    }
+
+    // component-defined computed properties are already defined on the
+    // component prototype. We only need to define computed properties defined
+    // at instantiation here.
+    if (!(key in vm)) {
+      defineComputed(vm, key, userDef)
+    } else if (process.env.NODE_ENV !== &#39;production&#39;) {
+      if (key in vm.$data) {
+        warn(`The computed property &quot;${key}&quot; is already defined in data.`, vm)
+      } else if (vm.$options.props &amp;&amp; key in vm.$options.props) {
+        warn(`The computed property &quot;${key}&quot; is already defined as a prop.`, vm)
+      }
+    }
+  }
+}
+</code></pre><p>创建<code>watchers</code>来存储<code>watcher</code>实例，遍历<code>computed</code>对象，来对每个<code>key</code>进行处理<br><code>const userDef = computed[key]</code>知道<code>userDef</code>就是我们所写的<code>function</code>， 一般情况下<code>getter</code>就是<code>userDef</code><br>举个简单的例子，我们平时是这样写的</p>
+<pre><code>export default {
+  data(){
+    return {
+      bar: 12
+    }
+  },
+  computed: {
+    foo() {
+      return this.bar / 2
+    }
+  }
+}
+</code></pre><p>所以<code>key</code>就是<code>foo</code>字段，而<code>userDef</code>和<code>getter</code>就是<code>foo</code>函数<br>每个<code>key</code>都会创建一个懒惰的<code>watcher</code>实例，按之前分析<code>observer</code>所讲的，<code>watcher</code>会根据<code>getter</code>来收集依赖， 但懒惰的<code>watcher</code>不会先收集依赖。<br>上面这段代码就订阅了<code>bar</code>这个属性。当<code>this.bar</code>修改的时候，就是通知这个<code>watcher</code>, 最后执行<code>getter</code>。</p>
+<p>但我们<code>this.foo</code>的时候怎么获取到这个属性呢，这又用到了<code>Object.defineProperty</code><br>往下看，可以看到<code>if (!(key in vm))</code>，这段就是判断<code>data</code>是否已经存在了这个<code>key</code>，是否与<code>data</code>的<code>key</code>冲突。<br>我们看下<code>defineComputed(vm, key, userDef)</code>的实现</p>
+<pre><code>export function defineComputed (
+  target: any,
+  key: string,
+  userDef: Object | Function
+) {
+  const shouldCache = !isServerRendering()
+  if (typeof userDef === &#39;function&#39;) {
+    sharedPropertyDefinition.get = shouldCache
+      ? createComputedGetter(key)
+      : userDef
+    sharedPropertyDefinition.set = noop
+  } else {
+    sharedPropertyDefinition.get = userDef.get
+      ? shouldCache &amp;&amp; userDef.cache !== false
+        ? createComputedGetter(key)
+        : userDef.get
+      : noop
+    sharedPropertyDefinition.set = userDef.set
+      ? userDef.set
+      : noop
+  }
+  if (process.env.NODE_ENV !== &#39;production&#39; &amp;&amp;
+      sharedPropertyDefinition.set === noop) {
+    sharedPropertyDefinition.set = function () {
+      warn(
+        `Computed property &quot;${key}&quot; was assigned to but it has no setter.`,
+        this
+      )
+    }
+  }
+  Object.defineProperty(target, key, sharedPropertyDefinition)
+}
+</code></pre><p>很快可以看出就是重新定义了<code>key</code>的属性，<br>如果是服务端渲染，它的<code>getter</code>是<code>userDef</code>函数;<br>如果不是，则它的<code>getter</code>就是<code>createComputedGetter(key)</code></p>
+<p>我们一般做的都不是服务端渲染，所以我们来看下<code>createComputedGetter</code>干了什么</p>
+<pre><code>function createComputedGetter (key) {
+  return function computedGetter () {
+    const watcher = this._computedWatchers &amp;&amp; this._computedWatchers[key]
+    if (watcher) {
+      if (watcher.dirty) {
+        // 获取watcher.value
+        watcher.evaluate()
+      }
+      if (Dep.target) {
+        // 依赖收集
+        watcher.depend()
+      }
+      return watcher.value
+    }
+  }
+}
+</code></pre><p>返回了一个函数作为属性的<code>getter</code>，而上面说的<code>computed</code>创建的<code>watcher</code>实例都是懒惰的。<br>所以第一次获取值的时候，我们要<code>watcher.evaluate()</code>, 收集依赖，并获取<code>watcher.value</code>的值，最后返回<code>watcher.value</code>。<br>我们用<code>this.foo</code>获取的是<code>watcher.value</code>, 而<code>wathcer.value</code>其实就是<code>getter</code>方法的结果，而<code>getter</code>就是我们的<code>foo</code>函数<br>我们可以看下<code>watcher.js</code>, 只显示了主要代码</p>
+<pre><code>// watcher.js
+export default class Watcher {
+  constructor (
+    vm: Component,
+    expOrFn: string | Function,
+    cb: Function,
+    options?: ?Object,
+    isRenderWatcher?: boolean
+  ) {
+    // parse expression for getter
+    if (typeof expOrFn === &#39;function&#39;) {
+      this.getter = expOrFn
+    } 
+    this.value = this.lazy
+      ? undefined
+      : this.get()
+  }
+  get () {
+    // Dep.target赋值为当前实例
+    pushTarget(this)
+    let value
+    const vm = this.vm
+    try {
+      value = this.getter.call(vm, vm)
+    } catch (e) {
+      if (this.user) {
+        handleError(e, vm, `getter for watcher &quot;${this.expression}&quot;`)
+      } else {
+        throw e
+      }
+    } finally {
+      if (this.deep) {
+        traverse(value)
+      }
+      popTarget()
+      this.cleanupDeps()
+    }
+    return value
+  },
+  evaluate () {
+    this.value = this.get()
+    this.dirty = false
+  }
+}
+</code></pre><p>总结下：<br>因此我们在获取初始化computed的时候，每个<code>key</code>创建一个懒惰(lazy)的<code>watcher</code>实例。懒惰的也就是不先收集依赖。<br>之后用<code>Object.defineProperty</code>在vm上重新定义<code>key</code>的属性, 这样我们可以直接用<code>this[key]</code>来使用<br>如果是服务端渲染，属性的<code>getter</code>就是我们写的<code>function</code><br>如果不是服务端渲染,<code>getter</code>返回的是<code>watcher.value</code>。<br>因为是懒惰的，第一次获取<code>this[key]</code>才会收集依赖。<br>因为当依赖改变的时候，会通知<code>watcher</code>去改变<code>watcher.value</code>，也就实现了<code>computed</code>。<br>所以当依赖不改变。计算属性是不会改变的</p>
+
+
+                
+            </div>
+
+            <!-- Comments -->
+            
+                <div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    
+
+
+                </div>
+            
+        </div>
+    </div>
+</article>
+
+    <!-- Footer -->
+    <hr />
+
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-10 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    
+
+                    
+
+                    
+                        <li>
+                            <a href="https://github.com/senzz" target="_blank">
+                                <span class="fa-stack fa-lg">
+                                    <i class="fa fa-circle fa-stack-2x"></i>
+                                    <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                                </span>
+                            </a>
+                        </li>
+                    
+
+                    
+
+                    
+
+                    
+                </ul>
+                <p class="copyright text-muted">Copyright &copy; 2018 Senzz<br></p>
+                <!-- <p class="copyright text-muted">Original Theme <a target="_blank" href="http://startbootstrap.com/template-overviews/clean-blog/">Clean Blog</a> from <a href="http://startbootstrap.com/" target="_blank">Start Bootstrap</a></p>
+                <p class="copyright text-muted">Adapted for <a target="_blank" href="https://hexo.io/">Hexo</a> by <a href="http://www.codeblocq.com/" target="_blank">Jonathan Klughertz</a></p> -->
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+    <!-- After footer scripts -->
+    
+<!-- jQuery -->
+<script src="https://cdn.bootcss.com/jquery/2.1.4/jquery.min.js"></script>
+
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+<!-- Bootstrap -->
+<script src="https://cdn.bootcss.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+
+<!-- Gallery -->
+<script src="https://cdn.bootcss.com/featherlight/1.3.5/featherlight.min.js" type="text/javascript" charset="utf-8"></script>
+
+<!-- Disqus Comments -->
+
+
+<script type="text/javascript">
+    $(function() {
+        // highlight
+        hljs.initHighlightingOnLoad();
+    })
+</script>
+
+
+</body>
+
+</html>
